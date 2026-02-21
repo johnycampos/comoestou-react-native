@@ -7,6 +7,7 @@ import { FirebaseProvider, useUser } from './src/firebase';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
+import { EditMoodScreen } from './src/screens/EditMoodScreen';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
 const Stack = createNativeStackNavigator();
@@ -34,6 +35,7 @@ function MainStack() {
       }}
     >
       <Stack.Screen name="Dashboard" component={DashboardScreen} />
+      <Stack.Screen name="EditMood" component={EditMoodScreen} />
     </Stack.Navigator>
   );
 }

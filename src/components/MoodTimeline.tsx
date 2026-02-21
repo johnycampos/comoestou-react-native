@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCollection, useFirestore, useUser } from '../firebase';
 
-type MoodEntry = { id: string; date: string; mood: number; notes?: string | null };
+type MoodEntry = { id: string; date: string; mood: number; notes?: string | null; heartRate?: number | null };
 
 const moodEmojis: Record<number, string> = {
   1: '😞',
@@ -14,7 +14,11 @@ const moodEmojis: Record<number, string> = {
   5: '😄',
 };
 
-export function MoodTimeline() {
+interface Props {
+  onEntryPress: (entry: MoodEntry) => void;
+}
+
+export function MoodTimeline({ onEntryPress }: Props) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { data: moodData, loading } = useCollection<MoodEntry>(
@@ -48,9 +52,14 @@ export function MoodTimeline() {
         ) : (
           moodData.map((entry, index) => (
             <View key={entry.id}>
-              <View style={styles.row}>
+              <TouchableOpacity style={styles.row} onPress={() => onEntryPress(entry)} activeOpacity={0.7}>
                 <View style={styles.emojiCol}>
                   <Text style={styles.emoji}>{moodEmojis[entry.mood] ?? '😐'}</Text>
+                  {entry.heartRate != null && (
+                    <View style={styles.heartRateTag}>
+                      <Text style={styles.heartRateText}>❤️ {entry.heartRate}</Text>
+                    </View>
+                  )}
                   <Text style={styles.date}>
                     {format(new Date(entry.date), "dd 'de' MMM", { locale: ptBR })}
                   </Text>
@@ -60,7 +69,7 @@ export function MoodTimeline() {
                     {entry.notes || 'Nenhuma nota para este dia.'}
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
               {index < moodData.length - 1 && <View style={styles.separator} />}
             </View>
           ))
@@ -98,4 +107,6 @@ const styles = StyleSheet.create({
   notes: { fontSize: 14, color: '#f8fafc' },
   notesEmpty: { fontSize: 14, color: '#64748b', fontStyle: 'italic' },
   separator: { height: 1, backgroundColor: '#334155' },
+  heartRateTag: { marginBottom: 4 },
+  heartRateText: { fontSize: 11, color: '#f87171', fontWeight: '600' },
 });

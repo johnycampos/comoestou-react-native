@@ -1,8 +1,9 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
+import { configureGoogleSignIn } from './google-sign-in';
 
 interface FirebaseContextValue {
   app: FirebaseApp | null;
@@ -27,6 +28,10 @@ interface FirebaseProviderProps {
 }
 
 export function FirebaseProvider({ children }: FirebaseProviderProps) {
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, []);
+
   return (
     <FirebaseContext.Provider value={firebaseValue}>
       {children}

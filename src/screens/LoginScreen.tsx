@@ -11,11 +11,13 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useAuth } from '../firebase';
+import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
+import { useAuth, useFirestore, signInWithGoogle } from '../firebase';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, insira um e-mail válido.'),
@@ -30,7 +32,9 @@ interface Props {
 
 export function LoginScreen({ navigation }: Props) {
   const auth = useAuth();
+  const firestore = useFirestore();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const { control, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -53,11 +57,29 @@ export function LoginScreen({ navigation }: Props) {
     }
   };
 
+  const onGoogleSignIn = async () => {
+    if (!auth) return;
+    setIsGoogleLoading(true);
+    try {
+      await signInWithGoogle(
+        auth,
+        firestore,
+        () => navigation.navigate('Dashboard'),
+        (msg) => Alert.alert('Erro de Login', msg)
+      );
+    } catch {
+      // Erro já tratado em signInWithGoogle
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.logo}>😊</Text>
@@ -121,6 +143,21 @@ export function LoginScreen({ navigation }: Props) {
             )}
           </TouchableOpacity>
 
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>ou</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <View style={styles.googleButton}>
+            <GoogleSigninButton
+              size={GoogleSigninButton.Size.Wide}
+              color={GoogleSigninButton.Color.Light}
+              onPress={onGoogleSignIn}
+              disabled={isGoogleLoading || isLoading}
+            />
+          </View>
+
           <TouchableOpacity
             style={styles.link}
             onPress={() => navigation.navigate('Register')}
@@ -131,12 +168,14 @@ export function LoginScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
+  safeArea: { flex: 1, backgroundColor: '#0f172a' },
+  container: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   card: {
     backgroundColor: '#1e293b',
@@ -168,6 +207,15 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    gap: 12,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#334155' },
+  dividerText: { color: '#94a3b8', fontSize: 14 },
+  googleButton: { alignItems: 'center', marginBottom: 8 },
   link: { marginTop: 24, alignItems: 'center' },
   linkText: { color: '#94a3b8', fontSize: 14 },
   linkBold: { color: '#3b82f6', fontWeight: '600' },
